@@ -101,8 +101,8 @@ export const enableTrustedTypesIntegration = false;
 export const warnAboutSpreadingKeyToJSX = false;
 
 export const enableComponentStackLocations = true;
-
-export const enableNewReconciler = false;
+// keyPoint，启用新的Reconciler
+export const enableNewReconciler = true;
 
 export const disableNativeComponentFrames = false;
 

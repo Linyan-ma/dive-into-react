@@ -7,26 +7,26 @@
  * @flow
  */
 
-import type {ReactElement} from 'shared/ReactElementType';
-import type {ReactFragment, ReactPortal, ReactScope} from 'shared/ReactTypes';
-import type {Fiber} from './ReactInternalTypes';
-import type {RootTag} from './ReactRootTags';
-import type {WorkTag} from './ReactWorkTags';
-import type {TypeOfMode} from './ReactTypeOfMode';
-import type {Lanes} from './ReactFiberLane.old';
-import type {SuspenseInstance} from './ReactFiberHostConfig';
-import type {OffscreenProps} from './ReactFiberOffscreenComponent';
+import type { ReactElement } from "shared/ReactElementType";
+import type { ReactFragment, ReactPortal, ReactScope } from "shared/ReactTypes";
+import type { Fiber } from "./ReactInternalTypes";
+import type { RootTag } from "./ReactRootTags";
+import type { WorkTag } from "./ReactWorkTags";
+import type { TypeOfMode } from "./ReactTypeOfMode";
+import type { Lanes } from "./ReactFiberLane.old";
+import type { SuspenseInstance } from "./ReactFiberHostConfig";
+import type { OffscreenProps } from "./ReactFiberOffscreenComponent";
 
-import invariant from 'shared/invariant';
+import invariant from "shared/invariant";
 import {
   createRootStrictEffectsByDefault,
   enableCache,
   enableStrictEffects,
   enableProfilerTimer,
   enableScopeAPI,
-} from 'shared/ReactFeatureFlags';
-import {NoFlags, Placement, StaticMask} from './ReactFiberFlags';
-import {ConcurrentRoot} from './ReactRootTags';
+} from "../../shared/ReactFeatureFlags";
+import { NoFlags, Placement, StaticMask } from "./ReactFiberFlags";
+import { ConcurrentRoot } from "./ReactRootTags";
 import {
   IndeterminateComponent,
   ClassComponent,
@@ -51,16 +51,16 @@ import {
   OffscreenComponent,
   LegacyHiddenComponent,
   CacheComponent,
-} from './ReactWorkTags';
-import getComponentNameFromFiber from 'react-reconciler/src/getComponentNameFromFiber';
+} from "./ReactWorkTags";
+import getComponentNameFromFiber from "react-reconciler/src/getComponentNameFromFiber";
 
-import {isDevToolsPresent} from './ReactFiberDevToolsHook.old';
+import { isDevToolsPresent } from "./ReactFiberDevToolsHook.old";
 import {
   resolveClassForHotReloading,
   resolveFunctionForHotReloading,
   resolveForwardRefForHotReloading,
-} from './ReactFiberHotReloading.old';
-import {NoLanes} from './ReactFiberLane.old';
+} from "./ReactFiberHotReloading.old";
+import { NoLanes } from "./ReactFiberLane.old";
 import {
   NoMode,
   ConcurrentMode,
@@ -68,7 +68,7 @@ import {
   ProfileMode,
   StrictLegacyMode,
   StrictEffectsMode,
-} from './ReactTypeOfMode';
+} from "./ReactTypeOfMode";
 import {
   REACT_FORWARD_REF_TYPE,
   REACT_FRAGMENT_TYPE,
@@ -85,9 +85,9 @@ import {
   REACT_OFFSCREEN_TYPE,
   REACT_LEGACY_HIDDEN_TYPE,
   REACT_CACHE_TYPE,
-} from 'shared/ReactSymbols';
+} from "shared/ReactSymbols";
 
-export type {Fiber};
+export type { Fiber };
 
 let hasBadMapPolyfill;
 
@@ -106,45 +106,58 @@ if (__DEV__) {
 }
 
 let debugCounter = 1;
-
+// keyPoint:Fiber结构
 function FiberNode(
   tag: WorkTag,
   pendingProps: mixed,
   key: null | string,
-  mode: TypeOfMode,
+  mode: TypeOfMode
 ) {
   // Instance
-  this.tag = tag;
-  this.key = key;
+  this.tag = tag; //Fiber标记是什么类型的Fiber/component，WorkTag 0-24
+  this.key = key; // 唯一标识
   this.elementType = null;
   this.type = null;
-  this.stateNode = null;
+  this.stateNode = null; //stateNode：fiber（根节点root创建的FiberRoot）
 
-  // Fiber
-  this.return = null;
-  this.child = null;
-  this.sibling = null;
-  this.index = 0;
+  // Fiber 核心算法基础
+  this.return = null; // 父节点
+  this.child = null; // 第一个子节点
+  this.sibling = null; // 兄弟节点
+  this.index = 0; //
 
   this.ref = null;
 
-  this.pendingProps = pendingProps;
-  this.memoizedProps = null;
-  this.updateQueue = null;
-  this.memoizedState = null;
+  this.pendingProps = pendingProps; //newprops
+  this.memoizedProps = null; // oldProps 上次的props
+  // updateQueue初始化数据结构：
+  //  {
+  //   baseState: fiber.memoizedState,
+  //   firstBaseUpdate: null,
+  //   lastBaseUpdate: null,
+  //   shared: {
+  //     pending: null,
+  //     interleaved: null,
+  //     lanes: NoLanes,
+  //   }, //update
+  //   effects: null,
+  // };
+  this.updateQueue = null; // TODO：作用？
+
+  this.memoizedState = null; //oldState
   this.dependencies = null;
 
-  this.mode = mode;
+  this.mode = mode; // ？
 
   // Effects
-  this.flags = NoFlags;
+  this.flags = NoFlags; // 标识该fiber是否完成
   this.subtreeFlags = NoFlags;
   this.deletions = null;
+  // 优先级调度
+  this.lanes = NoLanes; // 车道
+  this.childLanes = NoLanes; //子节点的所属车道
 
-  this.lanes = NoLanes;
-  this.childLanes = NoLanes;
-
-  this.alternate = null;
+  this.alternate = null; //work-in-progress current互为alternate
 
   if (enableProfilerTimer) {
     // Note: The following is done to avoid a v8 performance cliff.
@@ -180,7 +193,7 @@ function FiberNode(
     this._debugOwner = null;
     this._debugNeedsRemount = false;
     this._debugHookTypes = null;
-    if (!hasBadMapPolyfill && typeof Object.preventExtensions === 'function') {
+    if (!hasBadMapPolyfill && typeof Object.preventExtensions === "function") {
       Object.preventExtensions(this);
     }
   }
@@ -199,11 +212,11 @@ function FiberNode(
 //    is faster.
 // 5) It should be easy to port this to a C struct and keep a C implementation
 //    compatible.
-const createFiber = function(
+const createFiber = function (
   tag: WorkTag,
   pendingProps: mixed,
   key: null | string,
-  mode: TypeOfMode,
+  mode: TypeOfMode
 ): Fiber {
   // $FlowFixMe: the shapes are exact here but Flow doesn't like constructors
   return new FiberNode(tag, pendingProps, key, mode);
@@ -216,14 +229,14 @@ function shouldConstruct(Component: Function) {
 
 export function isSimpleFunctionComponent(type: any) {
   return (
-    typeof type === 'function' &&
+    typeof type === "function" &&
     !shouldConstruct(type) &&
     type.defaultProps === undefined
   );
 }
 
 export function resolveLazyComponentTag(Component: Function): WorkTag {
-  if (typeof Component === 'function') {
+  if (typeof Component === "function") {
     return shouldConstruct(Component) ? ClassComponent : FunctionComponent;
   } else if (Component !== undefined && Component !== null) {
     const $$typeof = Component.$$typeof;
@@ -250,7 +263,7 @@ export function createWorkInProgress(current: Fiber, pendingProps: any): Fiber {
       current.tag,
       pendingProps,
       current.key,
-      current.mode,
+      current.mode
     );
     workInProgress.elementType = current.elementType;
     workInProgress.type = current.type;
@@ -419,9 +432,10 @@ export function resetWorkInProgress(workInProgress: Fiber, renderLanes: Lanes) {
 
 export function createHostRootFiber(
   tag: RootTag,
-  strictModeLevelOverride: null | number,
+  strictModeLevelOverride: null | number
 ): Fiber {
   let mode;
+  // 当前版本tag默认为0，noMode
   if (tag === ConcurrentRoot) {
     mode = ConcurrentMode;
     if (strictModeLevelOverride !== null) {
@@ -450,22 +464,22 @@ export function createHostRootFiber(
     // Without some nodes in the tree having empty base times.
     mode |= ProfileMode;
   }
-
+  // HostRoot：3，表明为host节点，有hostCoponent和compositeComponent（FunctionComponent/ClassComponent...）
   return createFiber(HostRoot, null, null, mode);
 }
-
+// keyPoint:创建Fiber
 export function createFiberFromTypeAndProps(
   type: any, // React$ElementType
   key: null | string,
   pendingProps: any,
   owner: null | Fiber,
   mode: TypeOfMode,
-  lanes: Lanes,
+  lanes: Lanes
 ): Fiber {
   let fiberTag = IndeterminateComponent;
   // The resolved type is set if we know what the final type will be. I.e. it's not lazy.
   let resolvedType = type;
-  if (typeof type === 'function') {
+  if (typeof type === "function") {
     if (shouldConstruct(type)) {
       fiberTag = ClassComponent;
       if (__DEV__) {
@@ -476,7 +490,7 @@ export function createFiberFromTypeAndProps(
         resolvedType = resolveFunctionForHotReloading(resolvedType);
       }
     }
-  } else if (typeof type === 'string') {
+  } else if (typeof type === "string") {
     fiberTag = HostComponent;
   } else {
     getTag: switch (type) {
@@ -525,7 +539,7 @@ export function createFiberFromTypeAndProps(
         }
       // eslint-disable-next-line no-fallthrough
       default: {
-        if (typeof type === 'object' && type !== null) {
+        if (typeof type === "object" && type !== null) {
           switch (type.$$typeof) {
             case REACT_PROVIDER_TYPE:
               fiberTag = ContextProvider;
@@ -549,31 +563,31 @@ export function createFiberFromTypeAndProps(
               break getTag;
           }
         }
-        let info = '';
+        let info = "";
         if (__DEV__) {
           if (
             type === undefined ||
-            (typeof type === 'object' &&
+            (typeof type === "object" &&
               type !== null &&
               Object.keys(type).length === 0)
           ) {
             info +=
-              ' You likely forgot to export your component from the file ' +
+              " You likely forgot to export your component from the file " +
               "it's defined in, or you might have mixed up default and " +
-              'named imports.';
+              "named imports.";
           }
           const ownerName = owner ? getComponentNameFromFiber(owner) : null;
           if (ownerName) {
-            info += '\n\nCheck the render method of `' + ownerName + '`.';
+            info += "\n\nCheck the render method of `" + ownerName + "`.";
           }
         }
         invariant(
           false,
-          'Element type is invalid: expected a string (for built-in ' +
-            'components) or a class/function (for composite components) ' +
-            'but got: %s.%s',
+          "Element type is invalid: expected a string (for built-in " +
+            "components) or a class/function (for composite components) " +
+            "but got: %s.%s",
           type == null ? type : typeof type,
-          info,
+          info
         );
       }
     }
@@ -594,7 +608,7 @@ export function createFiberFromTypeAndProps(
 export function createFiberFromElement(
   element: ReactElement,
   mode: TypeOfMode,
-  lanes: Lanes,
+  lanes: Lanes
 ): Fiber {
   let owner = null;
   if (__DEV__) {
@@ -609,7 +623,7 @@ export function createFiberFromElement(
     pendingProps,
     owner,
     mode,
-    lanes,
+    lanes
   );
   if (__DEV__) {
     fiber._debugSource = element._source;
@@ -622,7 +636,7 @@ export function createFiberFromFragment(
   elements: ReactFragment,
   mode: TypeOfMode,
   lanes: Lanes,
-  key: null | string,
+  key: null | string
 ): Fiber {
   const fiber = createFiber(Fragment, elements, key, mode);
   fiber.lanes = lanes;
@@ -634,7 +648,7 @@ function createFiberFromScope(
   pendingProps: any,
   mode: TypeOfMode,
   lanes: Lanes,
-  key: null | string,
+  key: null | string
 ) {
   const fiber = createFiber(ScopeComponent, pendingProps, key, mode);
   fiber.type = scope;
@@ -647,10 +661,10 @@ function createFiberFromProfiler(
   pendingProps: any,
   mode: TypeOfMode,
   lanes: Lanes,
-  key: null | string,
+  key: null | string
 ): Fiber {
   if (__DEV__) {
-    if (typeof pendingProps.id !== 'string') {
+    if (typeof pendingProps.id !== "string") {
       console.error('Profiler must specify an "id" as a prop');
     }
   }
@@ -673,7 +687,7 @@ export function createFiberFromSuspense(
   pendingProps: any,
   mode: TypeOfMode,
   lanes: Lanes,
-  key: null | string,
+  key: null | string
 ) {
   const fiber = createFiber(SuspenseComponent, pendingProps, key, mode);
   fiber.elementType = REACT_SUSPENSE_TYPE;
@@ -685,7 +699,7 @@ export function createFiberFromSuspenseList(
   pendingProps: any,
   mode: TypeOfMode,
   lanes: Lanes,
-  key: null | string,
+  key: null | string
 ) {
   const fiber = createFiber(SuspenseListComponent, pendingProps, key, mode);
   fiber.elementType = REACT_SUSPENSE_LIST_TYPE;
@@ -697,7 +711,7 @@ export function createFiberFromOffscreen(
   pendingProps: OffscreenProps,
   mode: TypeOfMode,
   lanes: Lanes,
-  key: null | string,
+  key: null | string
 ) {
   const fiber = createFiber(OffscreenComponent, pendingProps, key, mode);
   fiber.elementType = REACT_OFFSCREEN_TYPE;
@@ -709,7 +723,7 @@ export function createFiberFromLegacyHidden(
   pendingProps: OffscreenProps,
   mode: TypeOfMode,
   lanes: Lanes,
-  key: null | string,
+  key: null | string
 ) {
   const fiber = createFiber(LegacyHiddenComponent, pendingProps, key, mode);
   fiber.elementType = REACT_LEGACY_HIDDEN_TYPE;
@@ -721,7 +735,7 @@ export function createFiberFromCache(
   pendingProps: any,
   mode: TypeOfMode,
   lanes: Lanes,
-  key: null | string,
+  key: null | string
 ) {
   const fiber = createFiber(CacheComponent, pendingProps, key, mode);
   fiber.elementType = REACT_CACHE_TYPE;
@@ -732,7 +746,7 @@ export function createFiberFromCache(
 export function createFiberFromText(
   content: string,
   mode: TypeOfMode,
-  lanes: Lanes,
+  lanes: Lanes
 ): Fiber {
   const fiber = createFiber(HostText, content, null, mode);
   fiber.lanes = lanes;
@@ -741,12 +755,12 @@ export function createFiberFromText(
 
 export function createFiberFromHostInstanceForDeletion(): Fiber {
   const fiber = createFiber(HostComponent, null, null, NoMode);
-  fiber.elementType = 'DELETED';
+  fiber.elementType = "DELETED";
   return fiber;
 }
 
 export function createFiberFromDehydratedFragment(
-  dehydratedNode: SuspenseInstance,
+  dehydratedNode: SuspenseInstance
 ): Fiber {
   const fiber = createFiber(DehydratedFragment, null, null, NoMode);
   fiber.stateNode = dehydratedNode;
@@ -756,7 +770,7 @@ export function createFiberFromDehydratedFragment(
 export function createFiberFromPortal(
   portal: ReactPortal,
   mode: TypeOfMode,
-  lanes: Lanes,
+  lanes: Lanes
 ): Fiber {
   const pendingProps = portal.children !== null ? portal.children : [];
   const fiber = createFiber(HostPortal, pendingProps, portal.key, mode);
@@ -772,7 +786,7 @@ export function createFiberFromPortal(
 // Used for stashing WIP properties to replay failed work in DEV.
 export function assignFiberPropertiesInDEV(
   target: Fiber | null,
-  source: Fiber,
+  source: Fiber
 ): Fiber {
   if (target === null) {
     // This Fiber's initial properties will always be overwritten.

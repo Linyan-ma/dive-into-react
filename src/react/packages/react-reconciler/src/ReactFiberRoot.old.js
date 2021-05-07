@@ -7,45 +7,68 @@
  * @flow
  */
 
-import type {FiberRoot, SuspenseHydrationCallbacks} from './ReactInternalTypes';
-import type {RootTag} from './ReactRootTags';
+import type {
+  FiberRoot,
+  SuspenseHydrationCallbacks,
+} from "./ReactInternalTypes";
+import type { RootTag } from "./ReactRootTags";
 
-import {noTimeout, supportsHydration} from './ReactFiberHostConfig';
-import {createHostRootFiber} from './ReactFiber.old';
+import { noTimeout, supportsHydration } from "./ReactFiberHostConfig";
+import { createHostRootFiber } from "./ReactFiber.old";
 import {
   NoLanes,
   NoLanePriority,
   NoTimestamp,
   createLaneMap,
-} from './ReactFiberLane.old';
+} from "./ReactFiberLane.old";
 import {
   enableSchedulerTracing,
   enableSuspenseCallback,
   enableCache,
   enableProfilerCommitHooks,
   enableProfilerTimer,
-} from 'shared/ReactFeatureFlags';
-import {unstable_getThreadID} from 'scheduler/tracing';
-import {initializeUpdateQueue} from './ReactUpdateQueue.old';
-import {LegacyRoot, ConcurrentRoot} from './ReactRootTags';
+} from "shared/ReactFeatureFlags";
+import { unstable_getThreadID } from "scheduler/tracing";
+import { initializeUpdateQueue } from "./ReactUpdateQueue.old";
+import { LegacyRoot, ConcurrentRoot } from "./ReactRootTags";
 
+/**
+ *
+ * keyPoint：创建FiberRootNode
+ * 和FiberNode不同，存储...Lanes,...times,...etc
+ * TODO：（猜测：主要是存储当前状态，为了停止重启任务）
+ * @param {*} containerInfo
+ * @param {*} tag
+ * @param {*} hydrate
+ */
 function FiberRootNode(containerInfo, tag, hydrate) {
-  this.tag = tag;
-  this.containerInfo = containerInfo;
+  this.tag = tag; //0|1
+  this.containerInfo = containerInfo; //div#root
   this.pendingChildren = null;
-  this.current = null;
+  this.current = null; //创建的FiberNode
   this.pingCache = null;
   this.finishedWork = null;
   this.timeoutHandle = noTimeout;
+  // context结构
+  // {
+  //   eventTime,
+  //   lane,
+
+  //   tag: UpdateState（0）,
+  //   payload: null,
+  //   callback: null,
+
+  //   next: null,
+  // }
   this.context = null;
   this.pendingContext = null;
-  this.hydrate = hydrate;
+  this.hydrate = hydrate; //第一次为false
   this.callbackNode = null;
   this.callbackPriority = NoLanePriority;
   this.eventTimes = createLaneMap(NoLanes);
   this.expirationTimes = createLaneMap(NoTimestamp);
 
-  this.pendingLanes = NoLanes;
+  this.pendingLanes = NoLanes; // lanes参数作用？？？
   this.suspendedLanes = NoLanes;
   this.pingedLanes = NoLanes;
   this.expiredLanes = NoLanes;
@@ -81,10 +104,10 @@ function FiberRootNode(containerInfo, tag, hydrate) {
   if (__DEV__) {
     switch (tag) {
       case ConcurrentRoot:
-        this._debugRootType = 'createRoot()';
+        this._debugRootType = "createRoot()";
         break;
       case LegacyRoot:
-        this._debugRootType = 'createLegacyRoot()';
+        this._debugRootType = "createLegacyRoot()";
         break;
     }
   }
@@ -95,7 +118,7 @@ export function createFiberRoot(
   tag: RootTag,
   hydrate: boolean,
   hydrationCallbacks: null | SuspenseHydrationCallbacks,
-  strictModeLevelOverride: null | number,
+  strictModeLevelOverride: null | number
 ): FiberRoot {
   const root: FiberRoot = (new FiberRootNode(containerInfo, tag, hydrate): any);
   if (enableSuspenseCallback) {
@@ -106,7 +129,7 @@ export function createFiberRoot(
   // stateNode is any.
   const uninitializedFiber = createHostRootFiber(tag, strictModeLevelOverride);
   root.current = uninitializedFiber;
-  uninitializedFiber.stateNode = root;
+  uninitializedFiber.stateNode = root; //
 
   if (enableCache) {
     const initialCache = new Map();

@@ -10,7 +10,7 @@
 import type { Thenable, Wakeable } from "shared/ReactTypes";
 import type { Fiber, FiberRoot } from "./ReactInternalTypes";
 import type { Lanes, Lane, LanePriority } from "./ReactFiberLane.old";
-import type { Interaction } from "scheduler/src/Tracing";
+import type { Interaction } from "../../scheduler/src/Tracing";
 import type { SuspenseState } from "./ReactFiberSuspenseComponent.old";
 import type { StackCursor } from "./ReactFiberStack.old";
 import type { FunctionComponentUpdateQueue } from "./ReactFiberHooks.old";
@@ -374,6 +374,13 @@ export function getCurrentTime() {
   return now();
 }
 
+/**
+ * 获取当前更新的优先级
+ *
+ * @export
+ * @param {Fiber} fiber
+ * @return {*}  {Lane}
+ */
 export function requestUpdateLane(fiber: Fiber): Lane {
   // Special cases
   const mode = fiber.mode;
@@ -1077,7 +1084,7 @@ export function deferredUpdates<A>(fn: () => A): A {
     setCurrentUpdateLanePriority(previousLanePriority);
   }
 }
-
+// 批量更新
 export function batchedUpdates<A, R>(fn: (A) => R, a: A): R {
   const prevExecutionContext = executionContext;
   executionContext |= BatchedContext;
@@ -1475,6 +1482,11 @@ function renderRootSync(root: FiberRoot, lanes: Lanes) {
 
 // The work loop is an extremely hot path. Tell Closure not to inline it.
 /** @noinline */
+
+/**
+ * 同步更新
+ *
+ */
 function workLoopSync() {
   // Already timed out, so perform work without checking if we need to yield.
   while (workInProgress !== null) {
@@ -1560,6 +1572,8 @@ function workLoopConcurrent() {
 }
 
 function performUnitOfWork(unitOfWork: Fiber): void {
+  // console.log("perform", unitOfWork);
+
   // The current, flushed, state of this fiber is the alternate. Ideally
   // nothing should rely on this, but relying on it here means that we don't
   // need an additional field on the work in progress.
@@ -1606,6 +1620,7 @@ function completeUnitOfWork(unitOfWork: Fiber): void {
         !enableProfilerTimer ||
         (completedWork.mode & ProfileMode) === NoMode
       ) {
+        // 返回值一直为null
         next = completeWork(current, completedWork, subtreeRenderLanes);
       } else {
         startProfilerTimer(completedWork);
@@ -1668,13 +1683,15 @@ function completeUnitOfWork(unitOfWork: Fiber): void {
       // If there is more work to do in this returnFiber, do that next.
       workInProgress = siblingFiber;
       return;
+      // break;
     }
+    // console.log(workInProgress, "after");
+
     // Otherwise, return to the parent
     completedWork = returnFiber;
     // Update the next thing we're working on in case something throws.
     workInProgress = completedWork;
   } while (completedWork !== null);
-
   // We've reached the root.
   if (workInProgressRootExitStatus === RootIncomplete) {
     workInProgressRootExitStatus = RootCompleted;

@@ -11,9 +11,9 @@
 import {
   enableSchedulerDebugging,
   enableProfiling,
-} from '../SchedulerFeatureFlags';
+} from "../SchedulerFeatureFlags";
 
-import {push, pop, peek} from '../SchedulerMinHeap';
+import { push, pop, peek } from "../SchedulerMinHeap";
 
 // TODO: Use symbols?
 import {
@@ -22,7 +22,7 @@ import {
   NormalPriority,
   LowPriority,
   IdlePriority,
-} from '../SchedulerPriorities';
+} from "../SchedulerPriorities";
 import {
   markTaskRun,
   markTaskYield,
@@ -34,13 +34,13 @@ import {
   markTaskStart,
   stopLoggingProfilingEvents,
   startLoggingProfilingEvents,
-} from '../SchedulerProfiling';
+} from "../SchedulerProfiling";
 
-import {enableIsInputPending} from '../SchedulerFeatureFlags';
+import { enableIsInputPending } from "../SchedulerFeatureFlags";
 
 let getCurrentTime;
 const hasPerformanceNow =
-  typeof performance === 'object' && typeof performance.now === 'function';
+  typeof performance === "object" && typeof performance.now === "function";
 
 if (hasPerformanceNow) {
   const localPerformance = performance;
@@ -89,27 +89,27 @@ const setTimeout = window.setTimeout;
 const clearTimeout = window.clearTimeout;
 const setImmediate = window.setImmediate; // IE and Node.js + jsdom
 
-if (typeof console !== 'undefined') {
+if (typeof console !== "undefined") {
   // TODO: Scheduler no longer requires these methods to be polyfilled. But
   // maybe we want to continue warning if they don't exist, to preserve the
   // option to rely on it in the future?
   const requestAnimationFrame = window.requestAnimationFrame;
   const cancelAnimationFrame = window.cancelAnimationFrame;
 
-  if (typeof requestAnimationFrame !== 'function') {
+  if (typeof requestAnimationFrame !== "function") {
     // Using console['error'] to evade Babel and ESLint
-    console['error'](
+    console["error"](
       "This browser doesn't support requestAnimationFrame. " +
-        'Make sure that you load a ' +
-        'polyfill in older browsers. https://reactjs.org/link/react-polyfills',
+        "Make sure that you load a " +
+        "polyfill in older browsers. https://reactjs.org/link/react-polyfills"
     );
   }
-  if (typeof cancelAnimationFrame !== 'function') {
+  if (typeof cancelAnimationFrame !== "function") {
     // Using console['error'] to evade Babel and ESLint
-    console['error'](
+    console["error"](
       "This browser doesn't support cancelAnimationFrame. " +
-        'Make sure that you load a ' +
-        'polyfill in older browsers. https://reactjs.org/link/react-polyfills',
+        "Make sure that you load a " +
+        "polyfill in older browsers. https://reactjs.org/link/react-polyfills"
     );
   }
 }
@@ -213,7 +213,7 @@ function workLoop(hasTimeRemaining, initialTime) {
       break;
     }
     const callback = currentTask.callback;
-    if (typeof callback === 'function') {
+    if (typeof callback === "function") {
       currentTask.callback = null;
       currentPriorityLevel = currentTask.priorityLevel;
       const didUserCallbackTimeout = currentTask.expirationTime <= currentTime;
@@ -222,7 +222,7 @@ function workLoop(hasTimeRemaining, initialTime) {
       }
       const continuationCallback = callback(didUserCallbackTimeout);
       currentTime = getCurrentTime();
-      if (typeof continuationCallback === 'function') {
+      if (typeof continuationCallback === "function") {
         currentTask.callback = continuationCallback;
         if (enableProfiling) {
           markTaskYield(currentTask, currentTime);
@@ -303,7 +303,7 @@ function unstable_next(eventHandler) {
 
 function unstable_wrapCallback(callback) {
   var parentPriorityLevel = currentPriorityLevel;
-  return function() {
+  return function () {
     // This is a fork of runWithPriority, inlined for performance.
     var previousPriorityLevel = currentPriorityLevel;
     currentPriorityLevel = parentPriorityLevel;
@@ -316,13 +316,22 @@ function unstable_wrapCallback(callback) {
   };
 }
 
+/**
+ * keyPoint:此次更新优先级，及callback调度
+ *
+ *
+ * @param {*} priorityLevel
+ * @param {*} callback
+ * @param {*} options
+ * @return {*}
+ */
 function unstable_scheduleCallback(priorityLevel, callback, options) {
   var currentTime = getCurrentTime();
 
   var startTime;
-  if (typeof options === 'object' && options !== null) {
+  if (typeof options === "object" && options !== null) {
     var delay = options.delay;
-    if (typeof delay === 'number' && delay > 0) {
+    if (typeof delay === "number" && delay > 0) {
       startTime = currentTime + delay;
     } else {
       startTime = currentTime;
@@ -501,9 +510,9 @@ function requestPaint() {
 function forceFrameRate(fps) {
   if (fps < 0 || fps > 125) {
     // Using console['error'] to evade Babel and ESLint
-    console['error'](
-      'forceFrameRate takes a positive int between 0 and 125, ' +
-        'forcing frame rates higher than 125 fps is not supported',
+    console["error"](
+      "forceFrameRate takes a positive int between 0 and 125, " +
+        "forcing frame rates higher than 125 fps is not supported"
     );
     return;
   }
@@ -552,7 +561,9 @@ const performWorkUntilDeadline = () => {
 };
 
 let schedulePerformWorkUntilDeadline;
-if (typeof setImmediate === 'function') {
+// keyPoint:若有setImmediate，使用setImmediate把scheduledHostCallback放进异步执行
+// 若没有在MessageChannel发布订阅来通讯，
+if (typeof setImmediate === "function") {
   // Node.js and old IE.
   // There's a few reasons for why we prefer setImmediate.
   //
@@ -576,6 +587,11 @@ if (typeof setImmediate === 'function') {
   };
 }
 
+/**
+ * 设置scheduledHostCallback
+ *
+ * @param {*} callback
+ */
 function requestHostCallback(callback) {
   scheduledHostCallback = callback;
   if (!isMessageLoopRunning) {

@@ -7,7 +7,7 @@
  * @flow
  */
 
-import ReactVersion from 'shared/ReactVersion';
+import ReactVersion from "shared/ReactVersion";
 import {
   REACT_FRAGMENT_TYPE,
   REACT_DEBUG_TRACING_MODE_TYPE,
@@ -18,21 +18,21 @@ import {
   REACT_LEGACY_HIDDEN_TYPE,
   REACT_SCOPE_TYPE,
   REACT_CACHE_TYPE,
-} from 'shared/ReactSymbols';
+} from "../../shared/ReactSymbols";
 
-import {Component, PureComponent} from './ReactBaseClasses';
-import {createRef} from './ReactCreateRef';
-import {forEach, map, count, toArray, only} from './ReactChildren';
+import { Component, PureComponent } from "./ReactBaseClasses";
+import { createRef } from "./ReactCreateRef";
+import { forEach, map, count, toArray, only } from "./ReactChildren";
 import {
   createElement as createElementProd,
   createFactory as createFactoryProd,
   cloneElement as cloneElementProd,
   isValidElement,
-} from './ReactElement';
-import {createContext} from './ReactContext';
-import {lazy} from './ReactLazy';
-import {forwardRef} from './ReactForwardRef';
-import {memo} from './ReactMemo';
+} from "./ReactElement";
+import { createContext } from "./ReactContext";
+import { lazy } from "./ReactLazy";
+import { forwardRef } from "./ReactForwardRef";
+import { memo } from "./ReactMemo";
 import {
   getCacheForType,
   useCallback,
@@ -50,15 +50,15 @@ import {
   useDeferredValue,
   useOpaqueIdentifier,
   useCacheRefresh,
-} from './ReactHooks';
+} from "./ReactHooks";
 import {
   createElementWithValidation,
   createFactoryWithValidation,
   cloneElementWithValidation,
-} from './ReactElementValidator';
-import {createMutableSource} from './ReactMutableSource';
-import ReactSharedInternals from './ReactSharedInternals';
-import {startTransition} from './ReactStartTransition';
+} from "./ReactElementValidator";
+import { createMutableSource } from "./ReactMutableSource";
+import ReactSharedInternals from "./ReactSharedInternals";
+import { startTransition } from "./ReactStartTransition";
 
 // TODO: Move this branching into the other module instead and just re-export.
 const createElement = __DEV__ ? createElementWithValidation : createElementProd;

@@ -84,8 +84,8 @@
 // regardless of priority. Intermediate state may vary according to system
 // resources, but the final state is always the same.
 
-import type {Fiber, FiberRoot} from './ReactInternalTypes';
-import type {Lanes, Lane} from './ReactFiberLane.old';
+import type { Fiber, FiberRoot } from "./ReactInternalTypes";
+import type { Lanes, Lane } from "./ReactFiberLane.old";
 
 import {
   NoLane,
@@ -95,25 +95,25 @@ import {
   isTransitionLane,
   intersectLanes,
   markRootEntangled,
-} from './ReactFiberLane.old';
+} from "./ReactFiberLane.old";
 import {
   enterDisallowedContextReadInDEV,
   exitDisallowedContextReadInDEV,
-} from './ReactFiberNewContext.old';
-import {Callback, ShouldCapture, DidCapture} from './ReactFiberFlags';
+} from "./ReactFiberNewContext.old";
+import { Callback, ShouldCapture, DidCapture } from "./ReactFiberFlags";
 
-import {debugRenderPhaseSideEffectsForStrictMode} from 'shared/ReactFeatureFlags';
+import { debugRenderPhaseSideEffectsForStrictMode } from "shared/ReactFeatureFlags";
 
-import {StrictLegacyMode} from './ReactTypeOfMode';
+import { StrictLegacyMode } from "./ReactTypeOfMode";
 import {
   markSkippedUpdateLanes,
   isInterleavedUpdate,
-} from './ReactFiberWorkLoop.old';
-import {pushInterleavedQueue} from './ReactFiberInterleavedUpdates.old';
+} from "./ReactFiberWorkLoop.old";
+import { pushInterleavedQueue } from "./ReactFiberInterleavedUpdates.old";
 
-import invariant from 'shared/invariant';
+import invariant from "shared/invariant";
 
-import {disableLogs, reenableLogs} from 'shared/ConsolePatchingDev';
+import { disableLogs, reenableLogs } from "shared/ConsolePatchingDev";
 
 export type Update<State> = {|
   // TODO: Temporary field. Will remove this by storing a map of
@@ -163,6 +163,13 @@ if (__DEV__) {
   };
 }
 
+/**
+ *
+ * 初始化该fiber的updateQueue
+ * @export
+ * @template State
+ * @param {Fiber} fiber
+ */
 export function initializeUpdateQueue<State>(fiber: Fiber): void {
   const queue: UpdateQueue<State> = {
     baseState: fiber.memoizedState,
@@ -180,7 +187,7 @@ export function initializeUpdateQueue<State>(fiber: Fiber): void {
 
 export function cloneUpdateQueue<State>(
   current: Fiber,
-  workInProgress: Fiber,
+  workInProgress: Fiber
 ): void {
   // Clone the update queue from current. Unless it's already a clone.
   const queue: UpdateQueue<State> = (workInProgress.updateQueue: any);
@@ -211,10 +218,20 @@ export function createUpdate(eventTime: number, lane: Lane): Update<*> {
   return update;
 }
 
+/**
+ *
+ * 更新Fiber updateQueue =》shared =》pending
+ * @export
+ * @template State
+ * @param {Fiber} fiber
+ * @param {Update<State>} update
+ * @param {Lane} lane
+ * @return {*}
+ */
 export function enqueueUpdate<State>(
   fiber: Fiber,
   update: Update<State>,
-  lane: Lane,
+  lane: Lane
 ) {
   const updateQueue = fiber.updateQueue;
   if (updateQueue === null) {
@@ -238,6 +255,7 @@ export function enqueueUpdate<State>(
     }
     sharedQueue.interleaved = update;
   } else {
+    //keyPoint：批量更新 入队机制
     const pending = sharedQueue.pending;
     if (pending === null) {
       // This is the first update. Create a circular list.
@@ -255,10 +273,10 @@ export function enqueueUpdate<State>(
       !didWarnUpdateInsideUpdate
     ) {
       console.error(
-        'An update (setState, replaceState, or forceUpdate) was scheduled ' +
-          'from inside an update function. Update functions should be pure, ' +
-          'with zero side-effects. Consider using componentDidUpdate or a ' +
-          'callback.',
+        "An update (setState, replaceState, or forceUpdate) was scheduled " +
+          "from inside an update function. Update functions should be pure, " +
+          "with zero side-effects. Consider using componentDidUpdate or a " +
+          "callback."
       );
       didWarnUpdateInsideUpdate = true;
     }
@@ -295,7 +313,7 @@ export function entangleTransitions(root: FiberRoot, fiber: Fiber, lane: Lane) {
 
 export function enqueueCapturedUpdate<State>(
   workInProgress: Fiber,
-  capturedUpdate: Update<State>,
+  capturedUpdate: Update<State>
 ) {
   // Captured updates are updates that are thrown by a child during the render
   // phase. They should be discarded if the render is aborted. Therefore,
@@ -378,12 +396,12 @@ function getStateFromUpdate<State>(
   update: Update<State>,
   prevState: State,
   nextProps: any,
-  instance: any,
+  instance: any
 ): any {
   switch (update.tag) {
     case ReplaceState: {
       const payload = update.payload;
-      if (typeof payload === 'function') {
+      if (typeof payload === "function") {
         // Updater function
         if (__DEV__) {
           enterDisallowedContextReadInDEV();
@@ -408,6 +426,7 @@ function getStateFromUpdate<State>(
       // State object
       return payload;
     }
+    // hooks Capture？？？ iryn todo
     case CaptureUpdate: {
       workInProgress.flags =
         (workInProgress.flags & ~ShouldCapture) | DidCapture;
@@ -416,7 +435,8 @@ function getStateFromUpdate<State>(
     case UpdateState: {
       const payload = update.payload;
       let partialState;
-      if (typeof payload === 'function') {
+      // 函数就执行，对象直接复制 setstate
+      if (typeof payload === "function") {
         // Updater function
         if (__DEV__) {
           enterDisallowedContextReadInDEV();
@@ -454,12 +474,22 @@ function getStateFromUpdate<State>(
   }
   return prevState;
 }
+// keyPoint:批处理 实际更新state的地方和处理effect lists
+// update数据结构
+// const update: Update<*> = {
+//   eventTime,
+//   lane,
+//   tag: UpdateState,
+//   payload: null,
+//   callback: null,
 
+//   next: null,
+// };
 export function processUpdateQueue<State>(
   workInProgress: Fiber,
   props: any,
   instance: any,
-  renderLanes: Lanes,
+  renderLanes: Lanes
 ): void {
   // This is always non-null on a ClassComponent or HostRoot
   const queue: UpdateQueue<State> = (workInProgress.updateQueue: any);
@@ -529,6 +559,7 @@ export function processUpdateQueue<State>(
       const updateLane = update.lane;
       const updateEventTime = update.eventTime;
       if (!isSubsetOfLanes(renderLanes, updateLane)) {
+        // 含有优先级的更新 TODO:myl
         // Priority is insufficient. Skip this update. If this is the first
         // skipped update, the previous update/state is the new base
         // update/state.
@@ -570,14 +601,14 @@ export function processUpdateQueue<State>(
           newLastBaseUpdate = newLastBaseUpdate.next = clone;
         }
 
-        // Process this update.
+        // Process this update. 计算新state
         newState = getStateFromUpdate(
           workInProgress,
           queue,
           update,
           newState,
           props,
-          instance,
+          instance
         );
         const callback = update.callback;
         if (callback !== null) {
@@ -653,10 +684,10 @@ export function processUpdateQueue<State>(
 
 function callCallback(callback, context) {
   invariant(
-    typeof callback === 'function',
-    'Invalid argument passed as callback. Expected a function. Instead ' +
-      'received: %s',
-    callback,
+    typeof callback === "function",
+    "Invalid argument passed as callback. Expected a function. Instead " +
+      "received: %s",
+    callback
   );
   callback.call(context);
 }
@@ -672,7 +703,7 @@ export function checkHasForceUpdateAfterProcessing(): boolean {
 export function commitUpdateQueue<State>(
   finishedWork: Fiber,
   finishedQueue: UpdateQueue<State>,
-  instance: any,
+  instance: any
 ): void {
   // Commit the effects
   const effects = finishedQueue.effects;

@@ -7,23 +7,23 @@
  * @flow
  */
 
-import type {ReactPriorityLevel} from './ReactInternalTypes';
+import type { ReactPriorityLevel } from "./ReactInternalTypes";
 
 // Intentionally not named imports because Rollup would use dynamic dispatch for
 // CommonJS interop named imports.
-import * as Scheduler from 'scheduler';
-import {__interactionsRef} from 'scheduler/tracing';
+import * as Scheduler from "../../scheduler";
+import { __interactionsRef } from "scheduler/tracing";
 import {
   enableSchedulerTracing,
   enableSyncMicroTasks,
-} from 'shared/ReactFeatureFlags';
-import invariant from 'shared/invariant';
+} from "shared/ReactFeatureFlags";
+import invariant from "shared/invariant";
 import {
   SyncLanePriority,
   getCurrentUpdateLanePriority,
   setCurrentUpdateLanePriority,
-} from './ReactFiberLane.new';
-import {scheduleMicrotask, supportsMicrotasks} from './ReactFiberHostConfig';
+} from "./ReactFiberLane.new";
+import { scheduleMicrotask, supportsMicrotasks } from "./ReactFiberHostConfig";
 
 const {
   unstable_scheduleCallback: Scheduler_scheduleCallback,
@@ -45,17 +45,17 @@ if (enableSchedulerTracing) {
   // scheduler/tracing
   invariant(
     __interactionsRef != null && __interactionsRef.current != null,
-    'It is not supported to run the profiling version of a renderer (for ' +
-      'example, `react-dom/profiling`) without also replacing the ' +
-      '`scheduler/tracing` module with `scheduler/tracing-profiling`. Your ' +
-      'bundler might have a setting for aliasing both modules. Learn more at ' +
-      'https://reactjs.org/link/profiling',
+    "It is not supported to run the profiling version of a renderer (for " +
+      "example, `react-dom/profiling`) without also replacing the " +
+      "`scheduler/tracing` module with `scheduler/tracing-profiling`. Your " +
+      "bundler might have a setting for aliasing both modules. Learn more at " +
+      "https://reactjs.org/link/profiling"
   );
 }
 
 export type SchedulerCallback = (isSync: boolean) => SchedulerCallback | null;
 
-type SchedulerCallbackOptions = {timeout?: number, ...};
+type SchedulerCallbackOptions = { timeout?: number, ... };
 
 // Except for NoPriority, these correspond to Scheduler priorities. We use
 // ascending numbers so we can compare them like numbers. They start at 90 to
@@ -101,7 +101,7 @@ export function getCurrentPriorityLevel(): ReactPriorityLevel {
     case Scheduler_IdlePriority:
       return IdlePriority;
     default:
-      invariant(false, 'Unknown priority level.');
+      invariant(false, "Unknown priority level.");
   }
 }
 
@@ -118,14 +118,14 @@ function reactPriorityToSchedulerPriority(reactPriorityLevel) {
     case IdlePriority:
       return Scheduler_IdlePriority;
     default:
-      invariant(false, 'Unknown priority level.');
+      invariant(false, "Unknown priority level.");
   }
 }
 
 export function scheduleCallback(
   reactPriorityLevel: ReactPriorityLevel,
   callback: SchedulerCallback,
-  options: SchedulerCallbackOptions | void | null,
+  options: SchedulerCallbackOptions | void | null
 ) {
   const priorityLevel = reactPriorityToSchedulerPriority(reactPriorityLevel);
   return Scheduler_scheduleCallback(priorityLevel, callback, options);
@@ -146,7 +146,7 @@ export function scheduleSyncCallback(callback: SchedulerCallback) {
       // Flush the queue in the next tick.
       immediateQueueCallbackNode = Scheduler_scheduleCallback(
         Scheduler_ImmediatePriority,
-        flushSyncCallbackQueueImpl,
+        flushSyncCallbackQueueImpl
       );
     }
   } else {
@@ -194,7 +194,7 @@ function flushSyncCallbackQueueImpl() {
       // Resume flushing in the next tick
       Scheduler_scheduleCallback(
         Scheduler_ImmediatePriority,
-        flushSyncCallbackQueue,
+        flushSyncCallbackQueue
       );
       throw error;
     } finally {

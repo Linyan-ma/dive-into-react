@@ -7,7 +7,7 @@
  * @flow
  */
 
-import type {FiberRoot, ReactPriorityLevel} from './ReactInternalTypes';
+import type { FiberRoot, ReactPriorityLevel } from "./ReactInternalTypes";
 
 // TODO: Ideally these types would be opaque but that doesn't work well with
 // our reconciler fork infra, since these leak into non-reconciler packages.
@@ -35,8 +35,11 @@ export type Lanes = number;
 export type Lane = number;
 export type LaneMap<T> = Array<T>;
 
-import invariant from 'shared/invariant';
-import {enableCache, enableSchedulingProfiler} from 'shared/ReactFeatureFlags';
+import invariant from "shared/invariant";
+import {
+  enableCache,
+  enableSchedulingProfiler,
+} from "shared/ReactFeatureFlags";
 
 import {
   ImmediatePriority as ImmediateSchedulerPriority,
@@ -44,7 +47,7 @@ import {
   NormalPriority as NormalSchedulerPriority,
   IdlePriority as IdleSchedulerPriority,
   NoPriority as NoSchedulerPriority,
-} from './SchedulerWithReactIntegration.old';
+} from "./SchedulerWithReactIntegration.old";
 
 export const SyncLanePriority: LanePriority = 15;
 export const SyncBatchedLanePriority: LanePriority = 14;
@@ -74,7 +77,7 @@ export const NoLanePriority: LanePriority = 0;
 
 // Lane values below should be kept in sync with getLabelsForLanes(), used by react-devtools-scheduling-profiler.
 // If those values are changed that package should be rebuilt and redeployed.
-
+// 车道 31条车道，分为几批，一批同步更新
 export const TotalLanes = 31;
 
 export const NoLanes: Lanes = /*                        */ 0b0000000000000000000000000000000;
@@ -132,49 +135,49 @@ export function getLabelsForLanes(lanes: Lanes): Array<string> | void {
   if (enableSchedulingProfiler) {
     const labels = [];
     if (lanes & SyncLane) {
-      labels.push('Sync');
+      labels.push("Sync");
     }
     if (lanes & SyncBatchedLane) {
-      labels.push('SyncBatched');
+      labels.push("SyncBatched");
     }
     if (lanes & InputDiscreteHydrationLane) {
-      labels.push('InputDiscreteHydration');
+      labels.push("InputDiscreteHydration");
     }
     if (lanes & InputDiscreteLane) {
-      labels.push('InputDiscrete');
+      labels.push("InputDiscrete");
     }
     if (lanes & InputContinuousHydrationLane) {
-      labels.push('InputContinuousHydration');
+      labels.push("InputContinuousHydration");
     }
     if (lanes & InputContinuousLane) {
-      labels.push('InputContinuous');
+      labels.push("InputContinuous");
     }
     if (lanes & DefaultHydrationLane) {
-      labels.push('DefaultHydration');
+      labels.push("DefaultHydration");
     }
     if (lanes & DefaultLane) {
-      labels.push('Default');
+      labels.push("Default");
     }
     if (lanes & TransitionHydrationLane) {
-      labels.push('TransitionHydration');
+      labels.push("TransitionHydration");
     }
     if (lanes & TransitionLanes) {
-      labels.push('Transition(s)');
+      labels.push("Transition(s)");
     }
     if (lanes & RetryLanes) {
-      labels.push('Retry(s)');
+      labels.push("Retry(s)");
     }
     if (lanes & SelectiveHydrationLane) {
-      labels.push('SelectiveHydration');
+      labels.push("SelectiveHydration");
     }
     if (lanes & IdleHydrationLane) {
-      labels.push('IdleHydration');
+      labels.push("IdleHydration");
     }
     if (lanes & IdleLane) {
-      labels.push('Idle');
+      labels.push("Idle");
     }
     if (lanes & OffscreenLane) {
-      labels.push('Offscreen');
+      labels.push("Offscreen");
     }
     return labels;
   }
@@ -265,7 +268,7 @@ function getHighestPriorityLanes(lanes: Lanes | Lane): Lanes {
     default:
       if (__DEV__) {
         console.error(
-          'Should have found matching lanes. This is a bug in React.',
+          "Should have found matching lanes. This is a bug in React."
         );
       }
       // This shouldn't be reachable, but as a fallback, return the entire bitmask.
@@ -275,7 +278,7 @@ function getHighestPriorityLanes(lanes: Lanes | Lane): Lanes {
 }
 
 export function lanePriorityToSchedulerPriority(
-  lanePriority: LanePriority,
+  lanePriority: LanePriority
 ): ReactPriorityLevel {
   switch (lanePriority) {
     case SyncLanePriority:
@@ -302,8 +305,8 @@ export function lanePriorityToSchedulerPriority(
     default:
       invariant(
         false,
-        'Invalid update priority: %s. This is a bug in React.',
-        lanePriority,
+        "Invalid update priority: %s. This is a bug in React.",
+        lanePriority
       );
   }
 }
@@ -481,7 +484,7 @@ function computeExpirationTime(lane: Lane, currentTime: number) {
 
 export function markStarvedLanesAsExpired(
   root: FiberRoot,
-  currentTime: number,
+  currentTime: number
 ): void {
   // TODO: This gets called every time we yield. We can optimize by storing
   // the earliest expiration time on the root. Then use that to quickly bail out
@@ -583,8 +586,8 @@ export function findUpdateLane(lanePriority: LanePriority): Lane {
 
   invariant(
     false,
-    'Invalid update priority: %s. This is a bug in React.',
-    lanePriority,
+    "Invalid update priority: %s. This is a bug in React.",
+    lanePriority
   );
 }
 
@@ -662,7 +665,7 @@ export function higherPriorityLane(a: Lane, b: Lane) {
 
 export function higherLanePriority(
   a: LanePriority,
-  b: LanePriority,
+  b: LanePriority
 ): LanePriority {
   return a !== NoLanePriority && a > b ? a : b;
 }
@@ -680,7 +683,7 @@ export function createLaneMap<T>(initial: T): LaneMap<T> {
 export function markRootUpdated(
   root: FiberRoot,
   updateLane: Lane,
-  eventTime: number,
+  eventTime: number
 ) {
   root.pendingLanes |= updateLane;
 
@@ -728,7 +731,7 @@ export function markRootSuspended(root: FiberRoot, suspendedLanes: Lanes) {
 export function markRootPinged(
   root: FiberRoot,
   pingedLanes: Lanes,
-  eventTime: number,
+  eventTime: number
 ) {
   root.pingedLanes |= root.suspendedLanes & pingedLanes;
 }
@@ -815,7 +818,7 @@ export function markRootEntangled(root: FiberRoot, entangledLanes: Lanes) {
 
 export function getBumpedLaneForHydration(
   root: FiberRoot,
-  renderLanes: Lanes,
+  renderLanes: Lanes
 ): Lane {
   getHighestPriorityLanes(renderLanes);
   const highestLanePriority = return_highestLanePriority;
@@ -859,7 +862,7 @@ export function getBumpedLaneForHydration(
       lane = NoLane;
       break;
     default:
-      invariant(false, 'Invalid lane: %s. This is a bug in React.', lane);
+      invariant(false, "Invalid lane: %s. This is a bug in React.", lane);
   }
 
   // Check if the lane we chose is suspended. If so, that indicates that we

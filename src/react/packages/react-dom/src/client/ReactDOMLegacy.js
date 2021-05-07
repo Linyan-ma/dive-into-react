@@ -110,6 +110,13 @@ function shouldHydrateDueToLegacyHeuristic(container) {
   );
 }
 
+/**
+ *
+ *
+ * @param {Container} container div#root
+ * @param {boolean} forceHydrate 第一次渲染固定为false（代表什么意义？）
+ * @return {*}  {RootType}
+ */
 function legacyCreateRootFromDOMContainer(
   container: Container,
   forceHydrate: boolean
@@ -189,6 +196,8 @@ function legacyRenderSubtreeIntoContainer(
   let root: RootType = (container._reactRootContainer: any);
   let fiberRoot;
   if (!root) {
+    // div#root上挂载了_reactRootContainer的FiberNode
+    // 初始化rootFiberNode和current
     // Initial mount
     root = container._reactRootContainer = legacyCreateRootFromDOMContainer(
       container,

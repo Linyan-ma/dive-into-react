@@ -51,7 +51,10 @@ import {
   registerMutableSourceForHydration,
 } from "../../../react-reconciler/src/ReactFiberReconciler";
 import invariant from "shared/invariant";
-import { ConcurrentRoot, LegacyRoot } from "react-reconciler/src/ReactRootTags";
+import {
+  ConcurrentRoot,
+  LegacyRoot,
+} from "../../../react-reconciler/src/ReactRootTags";
 
 function ReactDOMRoot(container: Container, options: void | RootOptions) {
   this._internalRoot = createRootImpl(container, ConcurrentRoot, options);
@@ -125,7 +128,7 @@ function createRootImpl(
     options != null && options.unstable_strictModeLevel != null
       ? options.unstable_strictModeLevel
       : null;
-
+  // FiberRootNode current=》fiberNode
   const root = createContainer(
     container,
     tag,
@@ -137,6 +140,7 @@ function createRootImpl(
 
   const rootContainerElement =
     container.nodeType === COMMENT_NODE ? container.parentNode : container;
+  // 事件系统，TODO：暂时略过
   listenToAllSupportedEvents(rootContainerElement);
 
   if (mutableSources) {
